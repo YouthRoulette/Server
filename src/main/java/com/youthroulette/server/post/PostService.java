@@ -4,6 +4,7 @@ import com.youthroulette.server.bucket.BucketItem;
 import com.youthroulette.server.bucket.BucketService;
 import com.youthroulette.server.bucket.BucketStatus;
 import com.youthroulette.server.common.ApiException;
+import com.youthroulette.server.common.ErrorCode;
 import com.youthroulette.server.friend.Friend;
 import com.youthroulette.server.friend.FriendService;
 import com.youthroulette.server.post.dto.CreatePostRequest;
@@ -12,7 +13,6 @@ import com.youthroulette.server.post.dto.PostResponse;
 import com.youthroulette.server.security.AuthUser;
 import com.youthroulette.server.user.User;
 import java.util.List;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -40,7 +40,10 @@ public class PostService {
         User user = authUser.get();
         BucketItem bucket = bucketService.getMyBucket(bucketId);
         if (bucket.getStatus() != BucketStatus.COMPLETED) {
-            throw new ApiException(HttpStatus.BAD_REQUEST, "COMPLETED 상태 버킷만 인증글을 작성할 수 있습니다.");
+            throw new ApiException(ErrorCode.INVALID_BUCKET_STATUS);
+        }
+        if (postRepository.existsByBucketItem(bucket)) {
+            throw new ApiException(ErrorCode.BUCKET_ALREADY_VERIFIED);
         }
         Post post = postRepository.save(new Post(user, bucket, request.imageUrl(), request.reviewText(), request.visibility()));
         if (request.friendIds() != null) {
@@ -73,7 +76,7 @@ public class PostService {
         User user = authUser.get();
         Post post = getPost(postId);
         if (!post.getUser().getId().equals(user.getId())) {
-            throw new ApiException(HttpStatus.FORBIDDEN, "내 인증글만 삭제할 수 있습니다.");
+            throw new ApiException(ErrorCode.ACCESS_DENIED);
         }
         postRepository.delete(post);
     }
@@ -83,7 +86,7 @@ public class PostService {
         User user = authUser.get();
         Post post = getPost(postId);
         if (postLikeRepository.existsByPostAndUser(post, user)) {
-            return;
+            throw new ApiException(ErrorCode.ALREADY_LIKED);
         }
         postLikeRepository.save(new PostLike(post, user));
     }
@@ -92,7 +95,9 @@ public class PostService {
     public void unlike(Long postId) {
         User user = authUser.get();
         Post post = getPost(postId);
-        postLikeRepository.findByPostAndUser(post, user).ifPresent(postLikeRepository::delete);
+        PostLike postLike = postLikeRepository.findByPostAndUser(post, user)
+            .orElseThrow(() -> new ApiException(ErrorCode.LIKE_NOT_FOUND));
+        postLikeRepository.delete(postLike);
     }
 
     @Transactional(readOnly = true)
@@ -103,7 +108,7 @@ public class PostService {
 
     private Post getPost(Long postId) {
         return postRepository.findById(postId)
-            .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "인증글을 찾을 수 없습니다."));
+            .orElseThrow(() -> new ApiException(ErrorCode.POST_NOT_FOUND));
     }
 
     private PostResponse toResponse(Post post) {
