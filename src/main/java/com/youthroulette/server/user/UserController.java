@@ -1,6 +1,8 @@
 package com.youthroulette.server.user;
 
-import com.youthroulette.server.user.dto.UpdateUserRequest;
+import com.youthroulette.server.user.dto.ProfileResponse;
+import com.youthroulette.server.user.dto.UpdateNicknameRequest;
+import com.youthroulette.server.user.dto.UpdateProfileRequest;
 import com.youthroulette.server.user.dto.UserResponse;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -23,8 +25,13 @@ public class UserController {
         return userService.me();
     }
 
-    @PatchMapping("/me")
-    public UserResponse updateMe(@Valid @RequestBody UpdateUserRequest request) {
-        return userService.updateMe(request);
+    @PatchMapping("/nickname")
+    public UserResponse updateNickname(@Valid @RequestBody UpdateNicknameRequest request) {
+        return userService.updateNickname(request);
+    }
+
+    @PatchMapping("/profile")
+    public ProfileResponse updateProfile(@Valid @RequestBody UpdateProfileRequest request) {
+        return userService.updateProfile(request);
     }
 }

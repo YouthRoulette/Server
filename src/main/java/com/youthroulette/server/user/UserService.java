@@ -1,7 +1,9 @@
 package com.youthroulette.server.user;
 
 import com.youthroulette.server.security.AuthUser;
-import com.youthroulette.server.user.dto.UpdateUserRequest;
+import com.youthroulette.server.user.dto.ProfileResponse;
+import com.youthroulette.server.user.dto.UpdateNicknameRequest;
+import com.youthroulette.server.user.dto.UpdateProfileRequest;
 import com.youthroulette.server.user.dto.UserResponse;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,9 +22,16 @@ public class UserService {
     }
 
     @Transactional
-    public UserResponse updateMe(UpdateUserRequest request) {
+    public UserResponse updateNickname(UpdateNicknameRequest request) {
         User user = authUser.get();
         user.updateNickname(request.nickname());
         return UserResponse.from(user);
+    }
+
+    @Transactional
+    public ProfileResponse updateProfile(UpdateProfileRequest request) {
+        User user = authUser.get();
+        user.updateProfile(request.emojiIndex(), request.colorIndex());
+        return ProfileResponse.from(user);
     }
 }

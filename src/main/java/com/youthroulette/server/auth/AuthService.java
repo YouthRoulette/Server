@@ -3,6 +3,7 @@ package com.youthroulette.server.auth;
 import com.youthroulette.server.auth.dto.LoginRequest;
 import com.youthroulette.server.auth.dto.LoginResponse;
 import com.youthroulette.server.auth.dto.SignupRequest;
+import com.youthroulette.server.auth.dto.SignupResponse;
 import com.youthroulette.server.common.ApiException;
 import com.youthroulette.server.common.ErrorCode;
 import com.youthroulette.server.security.JwtTokenProvider;
@@ -26,12 +27,12 @@ public class AuthService {
     }
 
     @Transactional
-    public UserResponse signup(SignupRequest request) {
+    public SignupResponse signup(SignupRequest request) {
         if (userRepository.existsByLoginId(request.loginId())) {
             throw new ApiException(ErrorCode.LOGINID_DUPLICATED);
         }
         User user = new User(request.loginId(), passwordEncoder.encode(request.password()), request.nickname());
-        return UserResponse.from(userRepository.save(user));
+        return SignupResponse.from(userRepository.save(user));
     }
 
     @Transactional(readOnly = true)

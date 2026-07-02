@@ -3,7 +3,7 @@ package com.youthroulette.server.auth;
 import com.youthroulette.server.auth.dto.LoginRequest;
 import com.youthroulette.server.auth.dto.LoginResponse;
 import com.youthroulette.server.auth.dto.SignupRequest;
-import com.youthroulette.server.user.dto.UserResponse;
+import com.youthroulette.server.auth.dto.SignupResponse;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -23,7 +23,7 @@ public class AuthController {
 
     @PostMapping("/signup")
     @ResponseStatus(HttpStatus.CREATED)
-    public UserResponse signup(@Valid @RequestBody SignupRequest request) {
+    public SignupResponse signup(@Valid @RequestBody SignupRequest request) {
         return authService.signup(request);
     }
 
