@@ -3,6 +3,7 @@ package com.youthroulette.server.auth;
 import com.youthroulette.server.auth.dto.LoginRequest;
 import com.youthroulette.server.auth.dto.LoginResponse;
 import com.youthroulette.server.auth.dto.SignupRequest;
+import com.youthroulette.server.auth.dto.SignupResponse;
 import com.youthroulette.server.common.ApiException;
 import com.youthroulette.server.security.JwtTokenProvider;
 import com.youthroulette.server.user.User;
@@ -26,20 +27,20 @@ public class AuthService {
     }
 
     @Transactional
-    public UserResponse signup(SignupRequest request) {
+    public SignupResponse signup(SignupRequest request) {
         if (userRepository.existsByLoginId(request.loginId())) {
-            throw new ApiException(HttpStatus.CONFLICT, "이미 사용 중인 loginId입니다.");
+            throw new ApiException(HttpStatus.CONFLICT, "이미 사용 중인 아이디입니다.");
         }
         User user = new User(request.loginId(), passwordEncoder.encode(request.password()), request.nickname());
-        return UserResponse.from(userRepository.save(user));
+        return SignupResponse.from(userRepository.save(user));
     }
 
     @Transactional(readOnly = true)
     public LoginResponse login(LoginRequest request) {
         User user = userRepository.findByLoginId(request.loginId())
-            .orElseThrow(() -> new ApiException(HttpStatus.UNAUTHORIZED, "loginId 또는 password가 올바르지 않습니다."));
+            .orElseThrow(() -> new ApiException(HttpStatus.UNAUTHORIZED, "아이디 또는 비밀번호가 올바르지 않습니다."));
         if (!passwordEncoder.matches(request.password(), user.getPassword())) {
-            throw new ApiException(HttpStatus.UNAUTHORIZED, "loginId 또는 password가 올바르지 않습니다.");
+            throw new ApiException(HttpStatus.UNAUTHORIZED, "아이디 또는 비밀번호가 올바르지 않습니다.");
         }
         return new LoginResponse(jwtTokenProvider.createAccessToken(user.getId(), user.getLoginId()), "Bearer");
     }
