@@ -1,9 +1,9 @@
 package com.youthroulette.server.security;
 
 import com.youthroulette.server.common.ApiException;
+import com.youthroulette.server.common.ErrorCode;
 import com.youthroulette.server.user.User;
 import com.youthroulette.server.user.UserRepository;
-import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
@@ -19,9 +19,9 @@ public class AuthUser {
     public User get() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null || !(authentication.getPrincipal() instanceof UserPrincipal principal)) {
-            throw new ApiException(HttpStatus.UNAUTHORIZED, "인증이 필요합니다.");
+            throw new ApiException(ErrorCode.UNAUTHORIZED);
         }
         return userRepository.findById(principal.getId())
-            .orElseThrow(() -> new ApiException(HttpStatus.UNAUTHORIZED, "인증 사용자를 찾을 수 없습니다."));
+            .orElseThrow(() -> new ApiException(ErrorCode.USER_NOT_FOUND));
     }
 }

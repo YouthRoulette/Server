@@ -35,9 +35,6 @@ public class BucketItem {
     @Column(nullable = false, length = 100)
     private String title;
 
-    @Column(length = 255)
-    private String description;
-
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private BucketStatus status = BucketStatus.TODO;
@@ -63,7 +60,9 @@ public class BucketItem {
     }
 
     @PrePersist
-    void prePersist() { createdAt = LocalDateTime.now(); }
+    void prePersist() {
+        createdAt = LocalDateTime.now();
+    }
 
     public void start() {
         status = BucketStatus.IN_PROGRESS;
@@ -73,6 +72,11 @@ public class BucketItem {
     public void complete() {
         status = BucketStatus.COMPLETED;
         completedAt = LocalDateTime.now();
+    }
+
+    public void incomplete() {
+        status = BucketStatus.IN_PROGRESS;
+        completedAt = null;
     }
 
     public Long getId() { return id; }
