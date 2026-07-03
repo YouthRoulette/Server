@@ -13,12 +13,14 @@ import com.youthroulette.server.post.dto.PostResponse;
 import com.youthroulette.server.post.dto.TaggedFriendResponse;
 import com.youthroulette.server.security.AuthUser;
 import com.youthroulette.server.user.User;
+
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -32,7 +34,7 @@ public class PostService {
     private final AuthUser authUser;
 
     public PostService(PostRepository postRepository, PostLikeRepository postLikeRepository,
-            PostFriendTagRepository postFriendTagRepository, BucketService bucketService, FriendService friendService, AuthUser authUser) {
+                       PostFriendTagRepository postFriendTagRepository, BucketService bucketService, FriendService friendService, AuthUser authUser) {
         this.postRepository = postRepository;
         this.postLikeRepository = postLikeRepository;
         this.postFriendTagRepository = postFriendTagRepository;
@@ -122,7 +124,9 @@ public class PostService {
                 .orElseThrow(() -> new ApiException(ErrorCode.POST_NOT_FOUND));
     }
 
-    /** 목록 응답 빌드 시 좋아요 여부/태그된 친구를 게시물별로 매번 쿼리하지 않고 배치로 한 번에 조회 */
+    /**
+     * 목록 응답 빌드 시 좋아요 여부/태그된 친구를 게시물별로 매번 쿼리하지 않고 배치로 한 번에 조회
+     */
     private List<PostResponse> toResponses(List<Post> posts, User currentUser) {
         if (posts.isEmpty()) {
             return List.of();

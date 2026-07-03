@@ -1,4 +1,8 @@
 package com.youthroulette.server.friend.dto;
 
-public record FriendListResponse(Long friendId, Long userId, String nickname) {
+public record FriendListResponse(Long friendId,
+                                 Long userId,
+                                 String nickname,
+                                 Integer emojiIndex,
+                                 Integer colorIndex) {
 }
