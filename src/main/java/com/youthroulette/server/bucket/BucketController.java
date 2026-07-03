@@ -2,6 +2,7 @@ package com.youthroulette.server.bucket;
 
 import com.youthroulette.server.bucket.dto.BucketRequest;
 import com.youthroulette.server.bucket.dto.BucketResponse;
+import com.youthroulette.server.bucket.dto.MessageResponse;
 import jakarta.validation.Valid;
 import java.util.List;
 import org.springframework.http.HttpStatus;
@@ -32,14 +33,18 @@ public class BucketController {
     }
 
     @GetMapping
-    public List<BucketResponse> myBuckets(@RequestParam(required = false) BucketStatus status) {
-        return bucketService.myBuckets(status);
+    public List<BucketResponse> myBuckets(
+            @RequestParam(required = false) BucketStatus status,
+            @RequestParam(required = false) Boolean verified
+    ) {
+        return bucketService.myBuckets(status, verified);
     }
 
     @DeleteMapping("/{bucketId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void delete(@PathVariable Long bucketId) {
+    public MessageResponse delete(@PathVariable Long bucketId) {
         bucketService.delete(bucketId);
+        return new MessageResponse("버킷이 삭제되었습니다.");
     }
 
     @PostMapping("/roulette")
