@@ -81,7 +81,11 @@ public class FriendService {
         return friendRepository.findAllByUserAndStatus(user, FriendStatus.ACCEPTED).stream()
             .map(friend -> {
                 User other = friend.getOther(user);
-                return new FriendListResponse(friend.getId(), other.getId(), other.getNickname());
+                return new FriendListResponse(friend.getId(),
+                        other.getId(),
+                        other.getNickname(),
+                        other.getEmojiIndex(),
+                        other.getColorIndex());
             }).toList();
     }
 
