@@ -1,9 +1,0 @@
-{
-  "packages": {
-    "java": "17"
-  },
-  "$schema": "https://railway.com/railway.schema.json",
-  "deploy": {
-    "startCommand": "java -jar build/libs/app.jar"
-  }
-}
