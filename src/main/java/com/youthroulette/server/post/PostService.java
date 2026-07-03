@@ -8,11 +8,17 @@ import com.youthroulette.server.common.ErrorCode;
 import com.youthroulette.server.friend.Friend;
 import com.youthroulette.server.friend.FriendService;
 import com.youthroulette.server.post.dto.CreatePostRequest;
-import com.youthroulette.server.post.dto.LikeCountResponse;
+import com.youthroulette.server.post.dto.LikeResponse;
 import com.youthroulette.server.post.dto.PostResponse;
+import com.youthroulette.server.post.dto.TaggedFriendResponse;
 import com.youthroulette.server.security.AuthUser;
 import com.youthroulette.server.user.User;
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,7 +32,7 @@ public class PostService {
     private final AuthUser authUser;
 
     public PostService(PostRepository postRepository, PostLikeRepository postLikeRepository,
-        PostFriendTagRepository postFriendTagRepository, BucketService bucketService, FriendService friendService, AuthUser authUser) {
+            PostFriendTagRepository postFriendTagRepository, BucketService bucketService, FriendService friendService, AuthUser authUser) {
         this.postRepository = postRepository;
         this.postLikeRepository = postLikeRepository;
         this.postFriendTagRepository = postFriendTagRepository;
@@ -46,13 +52,18 @@ public class PostService {
             throw new ApiException(ErrorCode.BUCKET_ALREADY_VERIFIED);
         }
         Post post = postRepository.save(new Post(user, bucket, request.imageUrl(), request.reviewText(), request.visibility()));
+
+        List<TaggedFriendResponse> taggedFriends = new ArrayList<>();
         if (request.friendIds() != null) {
-            for (Long friendId : request.friendIds()) {
+            // 요청에 같은 friendId가 중복으로 들어오면 (post_id, friend_id) 유니크 제약에 걸려 500이 나던 문제 방지
+            Set<Long> uniqueFriendIds = new LinkedHashSet<>(request.friendIds());
+            for (Long friendId : uniqueFriendIds) {
                 Friend friend = friendService.getAcceptedFriend(friendId, user);
                 postFriendTagRepository.save(new PostFriendTag(post, friend));
+                taggedFriends.add(TaggedFriendResponse.from(friend, user));
             }
         }
-        return PostResponse.from(post, 0);
+        return PostResponse.of(post, 0, false, taggedFriends);
     }
 
     @Transactional(readOnly = true)
@@ -62,13 +73,15 @@ public class PostService {
         if (friends.isEmpty()) {
             return List.of();
         }
-        return postRepository.findByUserInAndVisibilityOrderByCreatedAtDesc(friends, PostVisibility.PUBLIC).stream()
-            .map(this::toResponse).toList();
+        List<Post> posts = postRepository.findByUserInAndVisibilityOrderByCreatedAtDesc(friends, PostVisibility.PUBLIC);
+        return toResponses(posts, user);
     }
 
     @Transactional(readOnly = true)
     public List<PostResponse> myPosts() {
-        return postRepository.findByUserOrderByCreatedAtDesc(authUser.get()).stream().map(this::toResponse).toList();
+        User user = authUser.get();
+        List<Post> posts = postRepository.findByUserOrderByCreatedAtDesc(user);
+        return toResponses(posts, user);
     }
 
     @Transactional
@@ -82,36 +95,56 @@ public class PostService {
     }
 
     @Transactional
-    public void like(Long postId) {
+    public LikeResponse like(Long postId) {
         User user = authUser.get();
         Post post = getPost(postId);
         if (postLikeRepository.existsByPostAndUser(post, user)) {
             throw new ApiException(ErrorCode.ALREADY_LIKED);
         }
         postLikeRepository.save(new PostLike(post, user));
+        long count = postLikeRepository.countByPost(post);
+        return new LikeResponse(post.getId(), true, count);
     }
 
     @Transactional
-    public void unlike(Long postId) {
+    public LikeResponse unlike(Long postId) {
         User user = authUser.get();
         Post post = getPost(postId);
         PostLike postLike = postLikeRepository.findByPostAndUser(post, user)
-            .orElseThrow(() -> new ApiException(ErrorCode.LIKE_NOT_FOUND));
+                .orElseThrow(() -> new ApiException(ErrorCode.LIKE_NOT_FOUND));
         postLikeRepository.delete(postLike);
-    }
-
-    @Transactional(readOnly = true)
-    public LikeCountResponse likeCount(Long postId) {
-        Post post = getPost(postId);
-        return new LikeCountResponse(post.getId(), postLikeRepository.countByPost(post));
+        long count = postLikeRepository.countByPost(post);
+        return new LikeResponse(post.getId(), false, count);
     }
 
     private Post getPost(Long postId) {
         return postRepository.findById(postId)
-            .orElseThrow(() -> new ApiException(ErrorCode.POST_NOT_FOUND));
+                .orElseThrow(() -> new ApiException(ErrorCode.POST_NOT_FOUND));
     }
 
-    private PostResponse toResponse(Post post) {
-        return PostResponse.from(post, postLikeRepository.countByPost(post));
+    /** 목록 응답 빌드 시 좋아요 여부/태그된 친구를 게시물별로 매번 쿼리하지 않고 배치로 한 번에 조회 */
+    private List<PostResponse> toResponses(List<Post> posts, User currentUser) {
+        if (posts.isEmpty()) {
+            return List.of();
+        }
+
+        Set<Long> likedPostIds = postLikeRepository.findByPostInAndUser(posts, currentUser).stream()
+                .map(like -> like.getPost().getId())
+                .collect(Collectors.toSet());
+
+        Map<Long, List<PostFriendTag>> tagsByPostId = postFriendTagRepository.findByPostIn(posts).stream()
+                .collect(Collectors.groupingBy(tag -> tag.getPost().getId()));
+
+        return posts.stream()
+                .map(post -> {
+                    long likeCount = postLikeRepository.countByPost(post);
+                    boolean likedByMe = likedPostIds.contains(post.getId());
+                    List<TaggedFriendResponse> taggedFriends = tagsByPostId
+                            .getOrDefault(post.getId(), List.of()).stream()
+                            .map(tag -> TaggedFriendResponse.from(tag.getFriend(), post.getUser()))
+                            .toList();
+                    return PostResponse.of(post, likeCount, likedByMe, taggedFriends);
+                })
+                .toList();
     }
 }
