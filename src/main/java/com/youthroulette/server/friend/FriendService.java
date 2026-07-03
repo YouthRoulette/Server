@@ -57,7 +57,7 @@ public class FriendService {
         Friend friend = friendRepository.findByIdAndStatus(friendId, FriendStatus.PENDING)
             .orElseThrow(() -> new ApiException(ErrorCode.FRIEND_REQUEST_NOT_FOUND));
         if (!friend.getReceiver().getId().equals(user.getId())) {
-            throw new ApiException(ErrorCode.ACCESS_DENIED);
+            throw new ApiException(ErrorCode.ACCESS_DENIED, "수락 권한이 없습니다.");
         }
         friend.accept();
         return FriendResponse.from(friend);
@@ -69,7 +69,7 @@ public class FriendService {
         Friend friend = friendRepository.findByIdAndStatus(friendId, FriendStatus.PENDING)
             .orElseThrow(() -> new ApiException(ErrorCode.FRIEND_REQUEST_NOT_FOUND));
         if (!friend.getReceiver().getId().equals(user.getId())) {
-            throw new ApiException(ErrorCode.ACCESS_DENIED);
+            throw new ApiException(ErrorCode.ACCESS_DENIED, "거절 권한이 없습니다.");
         }
         friend.reject();
         return FriendResponse.from(friend);
@@ -83,17 +83,6 @@ public class FriendService {
                 User other = friend.getOther(user);
                 return new FriendListResponse(friend.getId(), other.getId(), other.getNickname());
             }).toList();
-    }
-
-    @Transactional
-    public void delete(Long friendId) {
-        User user = authUser.get();
-        Friend friend = friendRepository.findById(friendId)
-            .orElseThrow(() -> new ApiException(ErrorCode.INVALID_FRIENDSHIP));
-        if (!friend.involves(user)) {
-            throw new ApiException(ErrorCode.ACCESS_DENIED);
-        }
-        friendRepository.delete(friend);
     }
 
     @Transactional(readOnly = true)
