@@ -32,12 +32,21 @@ public class BucketService {
         if (bucketItemRepository.countByUser(user) >= MAX_BUCKET_COUNT) {
             throw new ApiException(ErrorCode.BUSINESS_RULE_VIOLATION, "버킷은 최대 8개까지 등록할 수 있습니다.");
         }
-        return BucketResponse.from(bucketItemRepository.save(new BucketItem(user, request.title())));
+        return BucketResponse.from(bucketItemRepository.save(new BucketItem(user, request.title(), request.emojiIndex(), request.colorIndex())));
     }
 
     @Transactional(readOnly = true)
-    public List<BucketResponse> myBuckets(BucketStatus status) {
+    public List<BucketResponse> myBuckets(BucketStatus status, Boolean verified) {
         User user = authUser.get();
+
+        // status=COMPLETED + verified 파라미터가 있을 때만 인증글 존재 여부로 추가 필터링
+        if (status == BucketStatus.COMPLETED && verified != null) {
+            List<BucketItem> buckets = verified
+                    ? bucketItemRepository.findCompletedAndVerifiedByUser(user)
+                    : bucketItemRepository.findCompletedAndUnverifiedByUser(user);
+            return buckets.stream().map(BucketResponse::from).toList();
+        }
+
         if (status == null) {
             return bucketItemRepository.findByUserOrderByCreatedAtDesc(user).stream().map(BucketResponse::from).toList();
         }
@@ -77,30 +86,33 @@ public class BucketService {
             throw new ApiException(ErrorCode.BUCKET_ALREADY_VERIFIED);
         }
         bucket.start();
+        user.increaseChallengedCount(); //마이페이지 challengedCount 반영
         return BucketResponse.from(bucket);
     }
 
     @Transactional
     public BucketResponse complete(Long bucketId) {
+        User user = authUser.get();
         BucketItem bucket = getMyBucket(bucketId);
         if (bucket.getStatus() == BucketStatus.COMPLETED) {
             throw new ApiException(ErrorCode.BUCKET_ALREADY_VERIFIED);
         }
-        if (bucket.getStatus() != BucketStatus.IN_PROGRESS) {
-            throw new ApiException(ErrorCode.INVALID_BUCKET_STATUS, "도전 중인 버킷만 완료할 수 있습니다.");
-        }
+        //TODO/IN_PROGRESS 상태 둘 다 완료 처리 가능 (도전 시작 안 한 버킷도 바로 완료 가능)
         bucket.complete();
+        user.increaseCompletedCount(); //마이페이지 completedCount 반영
         return BucketResponse.from(bucket);
     }
 
     @Transactional
     public BucketResponse incomplete(Long bucketId) {
+        User user = authUser.get();
         BucketItem bucket = getMyBucket(bucketId);
         if (postRepository.existsByBucketItem(bucket)) {
             throw new ApiException(ErrorCode.BUCKET_ALREADY_VERIFIED);
         }
         if (bucket.getStatus() == BucketStatus.COMPLETED) {
             bucket.incomplete();
+            user.decreaseCompletedCount(); //마이페이지 completedCount 반영
         }
         return BucketResponse.from(bucket);
     }

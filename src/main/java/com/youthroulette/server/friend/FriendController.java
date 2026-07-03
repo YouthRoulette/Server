@@ -38,8 +38,4 @@ public class FriendController {
 
     @GetMapping
     public List<FriendListResponse> friends() { return friendService.friends(); }
-
-    @DeleteMapping("/{friendId}")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void delete(@PathVariable Long friendId) { friendService.delete(friendId); }
 }

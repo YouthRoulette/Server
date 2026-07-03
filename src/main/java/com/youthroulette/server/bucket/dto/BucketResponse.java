@@ -9,13 +9,15 @@ import java.time.LocalDateTime;
 public record BucketResponse(
     Long bucketId,
     String title,
+    Integer emojiIndex,
+    Integer colorIndex,
     BucketStatus status,
     LocalDateTime createdAt,
     LocalDateTime startedAt,
     LocalDateTime completedAt
 ) {
     public static BucketResponse from(BucketItem bucket) {
-        return new BucketResponse(bucket.getId(), bucket.getTitle(), bucket.getStatus(),
-            bucket.getCreatedAt(), bucket.getStartedAt(), bucket.getCompletedAt());
+        return new BucketResponse(bucket.getId(), bucket.getTitle(), bucket.getEmojiIndex(), bucket.getColorIndex(),
+                bucket.getStatus(), bucket.getCreatedAt(), bucket.getStartedAt(), bucket.getCompletedAt());
     }
 }

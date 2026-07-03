@@ -35,4 +35,8 @@ public class PostFriendTag {
         this.post = post;
         this.friend = friend;
     }
+
+    public Long getId() { return id; }
+    public Post getPost() { return post; }
+    public Friend getFriend() { return friend; }
 }

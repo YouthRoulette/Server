@@ -43,4 +43,9 @@ public class PostLike {
 
     @PrePersist
     void prePersist() { createdAt = LocalDateTime.now(); }
+
+    public Long getId() { return id; }
+    public Post getPost() { return post; }
+    public User getUser() { return user; }
+    public LocalDateTime getCreatedAt() { return createdAt; }
 }

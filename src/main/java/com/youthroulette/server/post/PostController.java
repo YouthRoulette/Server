@@ -1,7 +1,8 @@
 package com.youthroulette.server.post;
 
 import com.youthroulette.server.post.dto.CreatePostRequest;
-import com.youthroulette.server.post.dto.LikeCountResponse;
+import com.youthroulette.server.post.dto.LikeResponse;
+import com.youthroulette.server.post.dto.MessageResponse;
 import com.youthroulette.server.post.dto.PostResponse;
 import jakarta.validation.Valid;
 import java.util.List;
@@ -35,17 +36,14 @@ public class PostController {
     public List<PostResponse> myPosts() { return postService.myPosts(); }
 
     @DeleteMapping("/{postId}")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void delete(@PathVariable Long postId) { postService.delete(postId); }
+    public MessageResponse delete(@PathVariable Long postId) {
+        postService.delete(postId);
+        return new MessageResponse(postId, "인증글이 삭제되었습니다.");
+    }
 
     @PostMapping("/{postId}/likes")
-    @ResponseStatus(HttpStatus.CREATED)
-    public void like(@PathVariable Long postId) { postService.like(postId); }
+    public LikeResponse like(@PathVariable Long postId) { return postService.like(postId); }
 
     @DeleteMapping("/{postId}/likes")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void unlike(@PathVariable Long postId) { postService.unlike(postId); }
-
-    @GetMapping("/{postId}/likes/count")
-    public LikeCountResponse likeCount(@PathVariable Long postId) { return postService.likeCount(postId); }
+    public LikeResponse unlike(@PathVariable Long postId) { return postService.unlike(postId); }
 }

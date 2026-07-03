@@ -35,6 +35,12 @@ public class BucketItem {
     @Column(nullable = false, length = 100)
     private String title;
 
+    @Column(name = "emoji_index")
+    private Integer emojiIndex;
+
+    @Column(name = "color_index")
+    private Integer colorIndex;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private BucketStatus status = BucketStatus.TODO;
@@ -54,9 +60,11 @@ public class BucketItem {
     protected BucketItem() {
     }
 
-    public BucketItem(User user, String title) {
+    public BucketItem(User user, String title, Integer emojiIndex, Integer colorIndex) {
         this.user = user;
         this.title = title;
+        this.emojiIndex = emojiIndex;
+        this.colorIndex = colorIndex;
     }
 
     @PrePersist
@@ -75,13 +83,16 @@ public class BucketItem {
     }
 
     public void incomplete() {
-        status = BucketStatus.IN_PROGRESS;
+        status = BucketStatus.TODO;
+        startedAt = null;
         completedAt = null;
     }
 
     public Long getId() { return id; }
     public User getUser() { return user; }
     public String getTitle() { return title; }
+    public Integer getEmojiIndex() { return emojiIndex; }
+    public Integer getColorIndex() { return colorIndex; }
     public BucketStatus getStatus() { return status; }
     public LocalDateTime getCreatedAt() { return createdAt; }
     public LocalDateTime getStartedAt() { return startedAt; }
