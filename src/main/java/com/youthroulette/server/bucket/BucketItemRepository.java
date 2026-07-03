@@ -8,6 +8,7 @@ import org.springframework.data.repository.query.Param;
 
 public interface BucketItemRepository extends JpaRepository<BucketItem, Long> {
     long countByUser(User user);
+    long countByUserAndStatus(User user, BucketStatus status);
     boolean existsByUserAndStatus(User user, BucketStatus status);
     List<BucketItem> findByUserOrderByCreatedAtDesc(User user);
     List<BucketItem> findByUserAndStatus(User user, BucketStatus status);

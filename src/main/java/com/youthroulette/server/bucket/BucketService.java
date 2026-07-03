@@ -29,7 +29,7 @@ public class BucketService {
     @Transactional
     public BucketResponse create(BucketRequest request) {
         User user = authUser.get();
-        if (bucketItemRepository.countByUser(user) >= MAX_BUCKET_COUNT) {
+        if (bucketItemRepository.countByUserAndStatus(user, BucketStatus.TODO) >= MAX_BUCKET_COUNT) {
             throw new ApiException(ErrorCode.BUSINESS_RULE_VIOLATION, "버킷은 최대 8개까지 등록할 수 있습니다.");
         }
         return BucketResponse.from(bucketItemRepository.save(new BucketItem(user, request.title(), request.emojiIndex(), request.colorIndex())));
